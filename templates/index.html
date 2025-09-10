@@ -1,0 +1,302 @@
+
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Consulta de pedidos - hub2b</title>
+    <link rel="icon" type="image/png" href="https://encrypted-tbn2.gstatic.com/faviconV2?url=https://www.salonline.com.br&client=VFE&size=64&type=FAVICON&fallback_opts=TYPE,SIZE,URL&nfrp=2">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <style>
+        body {
+    background-image: url('https://www.salonline.com.br/file/v8177196313975509006/general/fundo_home-desktop.gif');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    font-family: sans-serif;
+}
+
+        .container {
+            max-width: 750px;
+        }
+
+        .logo-container {
+            display: flex;
+            justify-content: center;
+            padding: 20px 0 0;
+        }
+
+        .logo-container img:not([src*="logo-salonline.svg"]) {
+            max-height: 50px;
+        }
+
+        h2 {
+            margin: 30px 0 25px;
+            color: #343a40;
+            text-align: center;
+        }
+
+        .input-group input,
+        .input-group button {
+            height: 50px;
+            font-size: 1.1rem;
+        }
+
+        .modal-body img:not([src*="logo-salonline.svg"]) {
+            max-width: 100px;
+        }
+
+        .d-flex-between {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo-result {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .logo-result img:not([src*="logo-salonline.svg"]) {
+            max-height: 40px;
+            margin: 0 10px;
+        }
+
+        #loader {
+            display: none;
+            position: fixed;
+            z-index: 1050;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(255, 255, 255, 0.8);
+            align-items: center;
+            justify-content: center;
+        }
+    
+        img:not([src*="logo-salonline.svg"]) {
+            width: 30px;
+            height: 30px!important;
+            object-fit: contain;
+        }
+        #typewriter::after {
+    content: "|";
+    animation: blink 0.7s infinite;
+    color: #333;
+}
+
+@keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+}
+    </style>
+
+</head>
+<body>
+
+<!-- Loader -->
+<div id="loader">
+    <div class="spinner-border text-primary" role="status" style="width: 4rem; height: 4rem;">
+        <span class="visually-hidden">Carregando...</span>
+    </div>
+</div>
+
+<!-- Header -->
+<div class="logo-container">
+    <img src="https://universo.salonline.com.br/wp-content/themes/salonline/imagens/logo-salonline.svg" alt="Salon Line">
+</div>
+
+
+<div class="d-flex justify-content-center align-items-center" style="height: 500px;">
+    <div class="container text-center">
+
+    <h2>Consulta de pedidos - <span id="typewriter"></span></h2>
+
+    <form method="POST" onsubmit="showLoader()">
+        <div class="input-group mb-3">
+            <input type="text" name="order_id" class="form-control" placeholder="Digite o nº do pedido" required>
+            <button type="submit" class="btn btn-primary">Buscar</button>
+        </div>
+    </form>
+</div>
+
+<!-- Modal de Resultado -->
+<div class="modal fade" id="resultadoModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-xl">
+        <div class="modal-content p-4">
+            <div class="modal-body">
+                <h5 class="text-primary mb-3">Consulta de Pedido - Ambiente: {{ resultado.ambiente }}</h5>
+
+                <div class="table-responsive">
+                    <table class="table table-bordered align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>CHAVE</th>
+                                <th>VALOR</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>ID da Cotação</td><td>{{ resultado.id_cotacao or "-" }}</td></tr>
+                            <tr><td>Entrega</td><td>{{ resultado.id_entrega or "-" }}</td></tr>
+                            <tr>
+                                <td>NFe</td>
+                                <td>
+                                    {% if resultado.link_nfe %}
+                                        <div class="d-flex-between">
+                                            <a href="{{ resultado.link_nfe }}" target="_blank" id="linkNfe">
+                                                {{ resultado.link_nfe[:50] ~ '...' if resultado.link_nfe|length > 60 else resultado.link_nfe }}
+                                            </a>
+                                            <button onclick="copiarChave(this)" class="btn btn-sm btn-outline-primary ms-2">Copiar Código de Acesso</button>
+                                        </div>
+                                    {% else %}-{% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Rastreio</td>
+                                <td>{% if resultado.link_rastreio %}
+                                        <a href="{{ resultado.link_rastreio }}" target="_blank">{{ resultado.link_rastreio }}</a>
+                                    {% else %}-{% endif %}
+                                </td>
+                            </tr>
+                            
+    <tr>
+        <td>Transportadora</td>
+        <td>
+            {% if resultado.nome_transportadora %}
+                {% if "shopee" in resultado.nome_transportadora.lower() %}
+                    <img src="https://imagensempng.com.br/wp-content/uploads/2023/04/Logo-Shopee-Png.png" alt="Shopee" style="height: 20px; margin-right: 8px;">
+                {% elif "tiktok" in resultado.nome_transportadora.lower() %}
+                    <img src="https://i.pinimg.com/736x/f0/00/71/f00071554c0cb8bfe247a2b9a3d2e4e0.jpg" alt="TikTok" style="height: 20px; margin-right: 8px;">
+                {% elif "magalu" in resultado.nome_transportadora.lower() %}
+                    <img src="https://images.seeklogo.com/logo-png/36/1/magalu-logo-png_seeklogo-362494.png" alt="Magalu" style="height: 20px; margin-right: 8px;">
+                {% endif %}
+                {{ resultado.nome_transportadora }}
+            {% else %}
+                -
+            {% endif %}
+        </td>
+    </tr>
+    
+                            
+    <tr>
+        <td>BSeller</td>
+        <td>
+            {% if resultado.order_bseller %}
+                <img src="https://media.licdn.com/dms/image/v2/C4D0BAQGUjFUAJu0sVg/company-logo_200_200/company-logo_200_200/0/1673893278466/somosbseller_logo?e=2147483647&v=beta&t=Q64gRxYA3yREX34NB6Fr1jD9IqjfwW0xIHCUKiylB0I" alt="Bseller" style="height: 20px; margin-right: 8px;">
+                {{ resultado.order_bseller }}
+            {% else %}
+                -
+            {% endif %}
+        </td>
+    </tr>
+    
+                            <tr><td>ID Pedido</td><td>{{ resultado.order_shopee or "-" }}</td></tr>
+                            <tr><td>Status Marketplace</td><td>{{ resultado.status_order or "-" }}</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <button type="button" class="btn btn-secondary mt-4" data-bs-dismiss="modal">Fechar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Erro -->
+<div class="modal fade" id="erroModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content text-center p-4">
+            <div class="modal-body">
+                <img src="https://universo.salonline.com.br/wp-content/themes/salonline/imagens/logo-salonline.svg" alt="Salon Line">
+                <h5 class="mt-3 mb-2">Pedido não encontrado</h5>
+                <p class="text-muted">{{ erro|escape }}</p>
+                <button type="button" class="btn btn-secondary mt-3" data-bs-dismiss="modal">Fechar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Scripts -->
+<script>
+    function showLoader() {
+        document.getElementById('loader').style.display = 'flex';
+    }
+
+    window.addEventListener('DOMContentLoaded', function () {
+        const temErro = {{ erro is not none | lower }};
+        const temResultado = {{ resultado is not none | lower }};
+
+        if (temErro) {
+            new bootstrap.Modal(document.getElementById('erroModal')).show();
+        } else if (temResultado) {
+            new bootstrap.Modal(document.getElementById('resultadoModal')).show();
+        }
+    });
+
+    function copiarChave(button) {
+        const link = document.getElementById('linkNfe').href;
+        const chave = new URL(link).searchParams.get("chaveAcesso");
+
+        if (chave) {
+            navigator.clipboard.writeText(chave).then(() => {
+                const original = button.innerText;
+                button.innerText = "Copiado!";
+                button.classList.remove("btn-outline-primary");
+                button.classList.add("btn-success");
+
+                setTimeout(() => {
+                    button.innerText = original;
+                    button.classList.remove("btn-success");
+                    button.classList.add("btn-outline-primary");
+                }, 2000);
+            });
+        }
+    }
+    const palavras = ["MARKETPLACES", "HUB2B"];
+let palavraIndex = 0;
+let letraIndex = 0;
+let escrevendo = true;
+
+function digitar() {
+    const elemento = document.getElementById("typewriter");
+    const palavraAtual = palavras[palavraIndex];
+
+    if (escrevendo) {
+        elemento.textContent = palavraAtual.substring(0, letraIndex++);
+        if (letraIndex > palavraAtual.length) {
+            escrevendo = false;
+            setTimeout(digitar, 1200); // pausa antes de apagar
+            return;
+        }
+    } else {
+        elemento.textContent = palavraAtual.substring(0, letraIndex--);
+        if (letraIndex < 0) {
+            escrevendo = true;
+            palavraIndex = (palavraIndex + 1) % palavras.length;
+        }
+    }
+
+    setTimeout(digitar, 100);
+}
+
+document.addEventListener("DOMContentLoaded", digitar);
+</script>
+<footer style="
+    position: fixed;
+    bottom: 10px;
+    left: 0;
+    width: 100%;
+    text-align: center;
+    font-size: 0.9rem;
+    color: #747474;
+    font-weight: 500;
+    z-index: 1000;
+">
+    Desenvolvido por: TI Salon Line
+</footer>
+</body>
+</html>
